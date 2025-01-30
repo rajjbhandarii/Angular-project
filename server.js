@@ -6,8 +6,15 @@ const cors = require("cors");
 const app = express();
 const db = new sqlite3.Database("./data.db");
 
+// Middleware
 app.use(bodyParser.json());
-app.use(cors());
+
+// Enable CORS (Only allow frontend requests from your domain)
+app.use(cors({
+  origin: "https://coder.great-site.net",
+  methods: ["GET", "POST", "DELETE"],
+  credentials: true
+}));
 
 // Create a table if not exists
 db.run(`
@@ -17,7 +24,6 @@ db.run(`
     description TEXT,
     amount INTEGER,
     category TEXT
-
   )
 `);
 
@@ -48,7 +54,7 @@ app.get("/api/data", (req, res) => {
   });
 });
 
-// remove data from database
+// Remove data from database
 app.delete("/api/data/:id", (req, res) => {
   db.run(`DELETE FROM data WHERE id = ?`, req.params.id, function (err) {
     if (err) {
@@ -58,6 +64,7 @@ app.delete("/api/data/:id", (req, res) => {
     }
   });
 });
+
 // Start server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;  // Use environment port if available
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
