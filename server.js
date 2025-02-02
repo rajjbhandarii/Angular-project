@@ -10,11 +10,11 @@ const db = new sqlite3.Database("./data.db");
 app.use(bodyParser.json());
 
 // Enable CORS (Only allow frontend requests from your domain)
-// app.use(cors({
-//   origin: "https://coder.great-site.net",
-//   methods: ["GET", "POST", "DELETE"],
-//   credentials: true
-// }));
+ app.use(cors({
+  origin: "https://coder.great-site.net",
+  methods: ["GET", "POST", "DELETE"],
+  credentials: true
+}));
 
 // Create a table if not exists
 db.run(`
