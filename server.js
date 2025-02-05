@@ -8,7 +8,7 @@ const db = new sqlite3.Database("./data.db");
 
 // Middleware
 app.use(bodyParser.json());
-
+app.use(cors());
 // Enable CORS (Only allow frontend requests from your domain)
  // app.use(cors({
 //  origin: "https://coder.great-site.net",
