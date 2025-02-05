@@ -11,7 +11,8 @@ app.use(bodyParser.json());
 
 // Enable CORS (Only allow frontend requests from your domain)
  app.use(cors({
-  origin: "https://coder.great-site.net",
+//  origin: "https://coder.great-site.net",
+   origin: "https://tracker-frontend-nu.vercel.app/",
   methods: ["GET", "POST", "DELETE"],
   credentials: true
 }));
