@@ -2,23 +2,16 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const sqlite3 = require("sqlite3").verbose();
 const cors = require("cors");
+const { take } = require("rxjs");
 
 const app = express();
-const db = new sqlite3.Database("./data.db");
+const transaction = new sqlite3.Database("./Transaction.db");
 
-// Middleware
 app.use(bodyParser.json());
 app.use(cors());
-// Enable CORS (Only allow frontend requests from your domain)
- // app.use(cors({
-//  origin: "https://coder.great-site.net",
-  //  origin: "https://tracker-frontend-nu.vercel.app/",
-  // methods: ["GET", "POST", "DELETE"],
-  // credentials: true
-// }));
 
 // Create a table if not exists
-db.run(`
+transaction.run(`
   CREATE TABLE IF NOT EXISTS data (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT,
@@ -27,11 +20,19 @@ db.run(`
     category TEXT
   )
 `);
+transaction.run(`
+  CREATE TABLE IF NOT EXISTS budget (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT ,
+    amount INTEGER,
+    spent INTEGER
+  )
+`);
 
 // Add data to the database
 app.post("/api/data", (req, res) => {
   const { date, description, amount, category } = req.body;
-  db.run(
+  transaction.run(
     "INSERT INTO data (date,description,amount,category) VALUES (?, ?, ?, ? )",
     [date, description, amount, category],
     function (err) {
@@ -46,7 +47,7 @@ app.post("/api/data", (req, res) => {
 
 // Get all data
 app.get("/api/data", (req, res) => {
-  db.all("SELECT * FROM data", [], (err, rows) => {
+  transaction.all("SELECT * FROM data", [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
@@ -55,17 +56,61 @@ app.get("/api/data", (req, res) => {
   });
 });
 
-// Remove data from database
+// remove data from database
 app.delete("/api/data/:id", (req, res) => {
-  db.run(`DELETE FROM data WHERE id = ?`, req.params.id, function (err) {
+  transaction.run(
+    `DELETE FROM data WHERE id = ?`,
+    req.params.id,
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.json({ changes: this.changes });
+      }
+    }
+  );
+});
+
+// Add budget to the database
+app.post("/api/budget", (req, res) => {
+  const { category, amount, spent } = req.body;
+  transaction.run(
+    "INSERT INTO budget (category, amount, spent) VALUES (?, ?, ?)",
+    [category, amount, spent],
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.status(201).json({ id: this.lastID });
+      }
+    }
+  );
+});
+
+app.get("/api/budget", (req, res) => {
+  transaction.all("SELECT * FROM budget", [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
-      res.json({ changes: this.changes });
+      res.json(rows);
     }
   });
 });
 
+app.delete("/api/budget/:id", (req, res) => {
+  transaction.run(
+    `DELETE FROM budget WHERE id = ?`,
+    req.params.id,
+    function (err) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.json({ changes: this.changes });
+      }
+    }
+  );
+});
+
 // Start server
-const PORT = process.env.PORT || 3000;  // Use environment port if available
+const PORT = 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
